@@ -1,0 +1,58 @@
+- hosts: webservers
+  tasks:
+    #- name: Change source list permission
+    #  file:
+    #    path: /etc/apt/sources.list.d
+    #    mode: '0777'
+    #    recurse: yes
+
+    - name: Add nginx repository using Jinja2 template
+      template:
+        src: nginx.list.j2
+        dest: /etc/apt/sources.list.d/nginx.list
+
+    - name: Add mariadb repository using Jinja2 template
+      template:
+        src: mariadb.list.j2
+        dest: /etc/apt/sources.list.d/mariadb.list
+
+    - name: Install dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - curl
+        - gnupg2
+        - ca-certificates
+        - lsb-release
+        - ubuntu-keyring
+
+    - name: Import nginx key
+      shell:
+        cmd: curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
+
+    - name: Import mariadb key
+      shell:
+        cmd: sudo apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc'
+
+    - name: Update repositories
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install nginx, mariadb-server, and mariadb-client
+      apt:
+        name:
+          - nginx=1.23.1-1~jammy
+          - mariadb-server-10.9
+          - mariadb-client-10.9
+        state: present
+
+    - name: Start and enable nginx and mariadb-server services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - nginx
+        - mariadb.service
