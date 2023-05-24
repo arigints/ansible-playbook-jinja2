@@ -1,4 +1,5 @@
 - hosts: webservers
+  become: yes
   tasks:
     #- name: Change source list permission
     #  file:
@@ -48,11 +49,8 @@
           - mariadb-client-10.9
         state: present
 
-    - name: Start and enable nginx and mariadb-server services
-      service:
-        name: "{{ item }}"
-        state: started
-        enabled: yes
-      loop:
-        - nginx
-        - mariadb.service
+    - name: Start and enable nginx services
+      service: name=nginx state=started enabled=yes
+
+    - name: Start and enable  mariadb-server services
+      service: name=mariadb.service state=started enabled=yes
